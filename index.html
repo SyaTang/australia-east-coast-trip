@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>澳大利亚东海岸16天行程地图</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{ --ink:#1f2933; --mut:#6b7280; --line:#e5e7eb; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--ink);}
+  body{display:flex;flex-direction:row;}
+  #map{flex:1;position:relative;background:#cfe3ee;min-width:0;}
+  #side{width:360px;flex:none;background:#f7f8fa;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;}
+  .hdr{padding:16px 18px;background:linear-gradient(135deg,#0f2c4c,#1B998B);color:#fff;}
+  .hdr h1{margin:0;font-size:18px;letter-spacing:.5px;}
+  .hdr .sub{margin-top:6px;font-size:12px;opacity:.9;line-height:1.6;}
+  .hdr .route{margin-top:8px;font-size:12px;font-weight:600;background:rgba(255,255,255,.16);border-radius:8px;padding:6px 8px;}
+  .ctrl{padding:10px 14px;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:6px;user-select:none;}
+  .chip .dot{width:10px;height:10px;border-radius:50%;}
+  .chip.off{opacity:.4;}
+  .legend{flex:1;overflow-y:auto;padding:8px 12px 24px;-webkit-overflow-scrolling:touch;}
+  .grp{margin:10px 0 4px;font-size:12px;font-weight:700;color:#fff;border-radius:7px;padding:5px 9px;display:flex;justify-content:space-between;}
+  .grp small{font-weight:500;opacity:.85;}
+  .item{display:flex;gap:9px;align-items:flex-start;padding:6px 6px;border-radius:8px;cursor:pointer;}
+  .item:hover{background:#eef2f6;}
+  .num{flex:0 0 24px;height:24px;border-radius:50%;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .item .nm{font-size:13px;line-height:1.35;}
+  .item .en{font-size:11px;color:var(--mut);}
+  .hotel{display:flex;gap:9px;align-items:flex-start;padding:6px;border-radius:8px;cursor:pointer;}
+  .hotel:hover{background:#eef2f6;}
+  .hbadge{flex:0 0 24px;height:24px;border-radius:6px;background:#111827;color:#ffd166;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+  .aport{display:flex;gap:9px;align-items:center;padding:5px 6px;border-radius:8px;cursor:pointer;}
+  .aport:hover{background:#eef2f6;}
+  .fl{font-size:12px;color:#0f2c4c;background:#e8f0f6;border-radius:8px;padding:7px 9px;margin:6px 2px;line-height:1.5;}
+  .fl b{color:#D7263D;}
+  .sect{font-size:12px;font-weight:700;color:var(--mut);margin:14px 4px 4px;letter-spacing:1px;}
+  /* map markers */
+  .pin{border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);font-size:12px;}
+  .hpin{background:#111827;color:#ffd166;border:2px solid #fff;border-radius:7px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.5);font-size:12px;}
+  .apin{background:#fff;color:#145da0;border:2px solid #145da0;border-radius:999px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;box-shadow:0 1px 4px rgba(0,0,0,.4);font-size:11px;white-space:nowrap;padding:0 6px;}
+  .plabel{background:#0f2c4c;color:#fff;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+  .pop b{font-size:13px;} .pop .d{font-size:11px;color:#D7263D;font-weight:700;}
+  .pop .e{font-size:11px;color:#6b7280;} .pop .n{font-size:12px;margin-top:3px;}
+  .pop .rows{margin-top:7px;border-top:1px solid #eee;padding-top:7px;}
+  .pop .row{display:flex;gap:7px;align-items:flex-start;margin-top:5px;}
+  .pop .row:first-child{margin-top:0;}
+  .pop .row .k{flex:0 0 auto;font-size:10.5px;font-weight:700;color:#fff;border-radius:5px;padding:1px 6px;margin-top:1px;line-height:1.5;}
+  .pop .row .k.i{background:#1B998B;} .pop .row .k.t{background:#2E86AB;} .pop .row .k.du{background:#F46036;}
+  .pop .row .v{font-size:12px;line-height:1.5;color:#1f2933;}
+  .leaflet-popup-content{margin:10px 12px;max-width:280px;}
+  #title{position:absolute;top:14px;left:14px;z-index:1000;background:rgba(255,255,255,.94);border-radius:12px;padding:10px 14px;box-shadow:0 2px 12px rgba(0,0,0,.18);max-width:calc(100% - 28px);}
+  #title h2{margin:0;font-size:15px;} #title p{margin:3px 0 0;font-size:11px;color:var(--mut);}
+  /* ===== mobile ===== */
+  @media (max-width:900px){
+    body{flex-direction:column;}
+    #map{flex:none;height:52vh;}
+    #side{width:100%;flex:1;border-left:none;border-top:1px solid var(--line);}
+    .hdr{padding:12px 14px;}
+    .hdr h1{font-size:16px;}
+    .hdr .sub{font-size:11px;margin-top:4px;}
+    .hdr .route{font-size:11px;margin-top:6px;padding:5px 7px;}
+    #title{top:10px;left:auto;right:10px;padding:8px 10px;border-radius:10px;max-width:72%;}
+    #title h2{font-size:13px;} #title p{font-size:10px;}
+    .ctrl{padding:8px 10px;gap:6px;}
+    .chip{font-size:11px;padding:4px 9px;}
+    .legend{padding:6px 10px 30px;}
+    .item .nm{font-size:12.5px;}
+  }
+</style>
+</head>
+<body>
+<div id="map">
+  <div id="title"><h2>澳大利亚东海岸 · 16天行程地图</h2><p>2026.09.23 — 10.08 ｜ 墨尔本→黄金海岸→凯恩斯→圣灵群岛→悉尼 ｜ 40景点(编号)+5住宿+5机场</p></div>
+</div>
+<div id="side">
+  <div class="hdr">
+    <h1>东海岸16天三人行程</h1>
+    <div class="sub">一路北上不折返 · 国泰CX135/CX100 香港往返 · 4段内陆廉航 · 人均约2万</div>
+    <div class="route">🛫 墨尔本 → 黄金海岸 → 凯恩斯(大堡礁) → 圣灵群岛(白天堂) → 悉尼 🛬</div>
+  </div>
+  <div class="ctrl" id="ctrl"></div>
+  <div class="legend" id="legend"></div>
+</div>
+<script>
+const DATA = {"city_color": {"墨尔本": "#D7263D", "黄金海岸": "#F46036", "凯恩斯": "#1B998B", "圣灵群岛": "#2E86AB", "悉尼": "#7B2D8E"}, "attractions": [[1, "D1", "墨尔本", "弗林德斯街车站", "Flinders Street Station", -37.8183, 144.9671, "市区citywalk地标"], [2, "D1", "墨尔本", "涂鸦街(霍西尔巷)", "Hosier Lane", -37.8165, 144.9691, "街头涂鸦艺术巷"], [3, "D1", "墨尔本", "联邦广场", "Federation Square", -37.8179, 144.9695, "市中心文化广场"], [4, "D1", "墨尔本", "亚拉河步道", "Yarra River Walk", -37.8199, 144.9755, "河畔漫步"], [5, "D2", "墨尔本", "小红帽灯塔", "Split Point Lighthouse", -38.4719, 144.104, "大洋路起点灯塔"], [6, "D2", "墨尔本", "大洋路纪念拱门", "Great Ocean Road Arch", -38.6567, 143.5162, "大洋路标志性门牌"], [7, "D2", "墨尔本", "洛恩", "Lorne", -38.5405, 143.9789, "海滨小镇"], [8, "D2", "墨尔本", "阿波罗湾", "Apollo Bay", -38.7575, 143.6712, "午餐停靠海湾"], [9, "D2", "墨尔本", "吉布森台阶", "Gibson Steps", -38.6325, 143.127, "下海崖观岩台阶"], [10, "D2", "墨尔本", "十二使徒岩", "Twelve Apostles", -38.6623, 143.105, "大洋路精华·心愿"], [11, "D3", "墨尔本", "普芬比利蒸汽小火车", "Puffing Billy Railway", -37.9094, 145.3553, "丹德农雨林蒸汽火车"], [12, "D4", "墨尔本", "Maru野生动物园", "Maru Koala & Animal Park", -38.5036, 145.2317, "菲利普岛动物园"], [13, "D4", "墨尔本", "诺比司角", "The Nobbies", -38.53, 145.1146, "海崖观景栈道"], [14, "D4", "墨尔本", "小企鹅归巢", "Penguin Parade", -38.5081, 145.1177, "傍晚企鹅归巢"], [15, "D5", "黄金海岸", "可伦宾野生动物园", "Currumbin Wildlife Sanctuary", -28.1368, 153.4864, "抱考拉喂袋鼠"], [16, "D5", "黄金海岸", "伯利角", "Burleigh Heads", -28.0905, 153.4503, "悬崖海景"], [17, "D5", "黄金海岸", "Q1观景台", "SkyPoint Observation Deck", -27.9817, 153.4283, "日落观景"], [18, "D5", "黄金海岸", "冲浪者天堂海滩", "Surfers Paradise Beach", -28.0012, 153.4319, "海滩漫步"], [19, "D6", "黄金海岸", "坦伯林山雨林小镇", "Tamborine Mountain", -27.964, 153.2, "雨林小镇"], [20, "D6", "黄金海岸", "宽滩文艺街区", "Broadbeach", -28.029, 153.432, "文艺休闲街区"], [21, "D7", "黄金海岸", "海洋世界", "Sea World", -27.868, 153.39, "主题乐园(可选)"], [22, "D8", "凯恩斯", "滨海泻湖步道", "Cairns Esplanade Lagoon", -16.9203, 145.7783, "市区海滨泳池步道"], [23, "D9", "凯恩斯", "大堡礁外礁浮潜", "Great Barrier Reef Snorkel", -16.8, 145.92, "全天出海·心愿"], [24, "D10", "圣灵群岛", "日落帆船巡游", "Sunset Sailing", -20.27, 148.76, "艾尔利滩日落帆船"], [25, "D11", "圣灵群岛", "白天堂沙滩", "Whitehaven Beach", -20.283, 149.033, "白沙·视频经典"], [26, "D11", "圣灵群岛", "希尔湾观景台", "Hill Inlet Lookout", -20.2622, 149.0226, "漩涡沙洲观景"], [27, "D12", "悉尼", "海德公园", "Hyde Park", -33.8732, 151.211, "市中心绿地"], [28, "D12", "悉尼", "圣玛丽大教堂", "St Mary's Cathedral", -33.8685, 151.2145, "哥特式大教堂"], [29, "D12", "悉尼", "环形码头", "Circular Quay", -33.8615, 151.2107, "远眺歌剧院海港桥"], [30, "D12", "悉尼", "悉尼歌剧院", "Sydney Opera House", -33.8568, 151.2153, "标志建筑·心愿"], [31, "D12", "悉尼", "海港大桥", "Sydney Harbour Bridge", -33.8523, 151.2108, "海港大桥"], [32, "D13", "悉尼", "观鲸游船", "Whale Watching Cruise", -33.83, 151.32, "座头鲸迁徙季出海"], [33, "D13", "悉尼", "皇家植物园", "Royal Botanic Garden", -33.8642, 151.2166, "海滨植物园"], [34, "D13", "悉尼", "麦考利夫人座椅", "Mrs Macquarie's Chair", -33.86, 151.221, "歌剧院经典机位"], [35, "D14", "悉尼", "蓝山景观铁路", "Scenic World Railway", -33.7326, 150.311, "蓝山一日·景观铁路"], [36, "D14", "悉尼", "三姐妹峰", "Three Sisters", -33.73, 150.3175, "蓝山三姐妹峰"], [37, "D15", "悉尼", "岩石区", "The Rocks", -33.8595, 151.2088, "历史街区"], [38, "D15", "悉尼", "当代艺术博物馆", "Museum of Contemporary Art", -33.8603, 151.2098, "当代艺术馆"], [39, "D15", "悉尼", "塔龙加动物园", "Taronga Zoo", -33.843, 151.241, "渡轮前往·港湾动物园"], [40, "D15", "悉尼", "达令港", "Darling Harbour", -33.872, 151.199, "傍晚夜景"]], "hotels": [["H1", "墨尔本", "Brady Hotels Central Melbourne", "4晚", "09.23-26", -37.8116, 144.9632], ["H2", "黄金海岸", "Oaks Gold Coast Hotel (冲浪者天堂)", "3晚", "09.27-29", -27.9995, 153.429], ["H3", "凯恩斯", "Cairns City Sheridan", "2晚", "09.30-10.01", -16.9186, 145.7753], ["H4", "圣灵群岛", "艾尔利滩住宿(待预订)", "2晚", "10.02-03", -20.2683, 148.7167], ["H5", "悉尼", "Paradox Sydney (CBD)", "4晚", "10.04-07", -33.8735, 151.209]], "flights": [[[-37.669, 144.841], [-28.1644, 153.5047], "09.27", "JQ436", "墨尔本MEL→黄金海岸OOL"], [[-28.1644, 153.5047], [-16.8858, 145.7553], "09.30", "JQ892", "黄金海岸OOL→凯恩斯CNS"], [[-16.8858, 145.7553], [-20.495, 148.552], "10.02", "直飞~1.5h", "凯恩斯CNS→圣灵群岛PPP"], [[-20.495, 148.552], [-33.9399, 151.1753], "10.04", "捷星直飞~2.5h", "圣灵群岛PPP→悉尼SYD"]], "airports": [["MEL", "墨尔本机场", -37.669, 144.841, "CX135国际抵达 / JQ436内陆出发 / 租车取还"], ["OOL", "黄金海岸机场", -28.1644, 153.5047, "JQ436抵达 / JQ892出发 / 租车取还"], ["CNS", "凯恩斯机场", -16.8858, 145.7553, "JQ892抵达 / 直飞圣灵群岛出发"], ["PPP", "普罗瑟派恩(圣灵群岛)机场", -20.495, 148.552, "圣灵群岛直飞抵达 / 捷星飞悉尼出发 / 接驳车约40分钟到艾尔利滩"], ["SYD", "悉尼机场", -33.9399, 151.1753, "捷星抵达 / CX100国际返程出发"]], "details": {"1": {"intro": "墨尔本市中心地标，黄色维多利亚式百年老站，门前台阶是当地人约定俗成的碰面点。", "trans": "住市中心，步行可达；免费City Circle环城电车经过。", "dur": "约0.5小时"}, "2": {"intro": "墨尔本最著名的街头涂鸦艺术巷，墙面作品不断被覆盖更新，每次来都不一样。", "trans": "步行，紧邻弗林德斯街车站与联邦广场。", "dur": "约0.5小时"}, "3": {"intro": "解构主义风格建筑群，集美术馆、影院、餐厅于一体的文化广场，常有街头表演。", "trans": "步行，位于弗林德斯街车站正对面。", "dur": "0.5–1小时"}, "4": {"intro": "穿城而过的亚拉河两岸步道，河畔咖啡、天鹅与城市夜景，散步休闲好去处。", "trans": "步行，沿市中心河段。", "dur": "0.5–1小时"}, "5": {"intro": "大洋路起点附近的白色海崖灯塔，可俯瞰巴斯海峡海岸线。", "trans": "自驾，市区往北约1小时（MEL机场取车）。", "dur": "约0.5小时"}, "6": {"intro": "大洋路标志性木质门牌拱门，纪念一战返乡士兵修筑这条路。", "trans": "自驾途经，路边停车拍照。", "dur": "约15分钟"}, "7": {"intro": "大洋路沿线的海滨度假小镇，沙滩、瀑布步道与咖啡馆。", "trans": "自驾停靠。", "dur": "0.5–1小时"}, "8": {"intro": "宁静的海湾小镇，通常作为大洋路行程的午餐与休息站。", "trans": "自驾停靠。", "dur": "约1小时（含午餐）"}, "9": {"intro": "从海崖顶沿台阶下到沙滩，可从下方近距离仰望十二使徒岩。", "trans": "自驾停靠，停车场旁即是台阶入口。", "dur": "约0.5小时"}, "10": {"intro": "大洋路精华，矗立海中的石灰岩海蚀柱群，日落时分最震撼，本次行程心愿点。", "trans": "自驾前往；可选直升机俯瞰。", "dur": "1–1.5小时"}, "11": {"intro": "丹德农山脉的百年蒸汽小火车，穿越雨林，可坐在窗边把腿悬空，经典体验。", "trans": "自驾约1小时，或从墨尔本市区参加半日/一日游。", "dur": "3–4小时（含往返）"}, "12": {"intro": "菲利普岛上的动物园，可抱考拉、喂袋鼠，人少亲近动物。", "trans": "自驾约1.5小时，前往菲利普岛途中。", "dur": "1.5–2小时"}, "13": {"intro": "海崖观景栈道，可远眺海豹岩与企鹅栖息地，海景开阔。", "trans": "自驾，菲利普岛西南端。", "dur": "约1小时"}, "14": {"intro": "傍晚神仙企鹅列队从海里归巢，需提前预订看台票，禁止拍照。", "trans": "自驾，菲利普岛；归巢在日落后。", "dur": "2–2.5小时（含等候）"}, "15": {"intro": "澳洲经典野生动物园，可抱考拉、喂袋鼠、看彩虹鹦鹉喂食秀。", "trans": "自驾约20分钟（OOL机场取车）。", "dur": "3–4小时"}, "16": {"intro": "悬崖海景与冲浪海滩，海边国家公园步道可俯瞰海岸线。", "trans": "自驾约25分钟。", "dur": "1–2小时"}, "17": {"intro": "南半球最高住宅楼的观景台，日落时俯瞰整条黄金海岸海岸线。", "trans": "自驾或步行至冲浪者天堂Q1大楼。", "dur": "1–1.5小时"}, "18": {"intro": "黄金海岸标志性海滩与市中心，摩天楼林立、沙滩绵延。", "trans": "酒店步行可达。", "dur": "1–2小时"}, "19": {"intro": "内陆雨林小镇，有酒庄、雨林瀑布步道与手工艺品集市。", "trans": "自驾约40分钟。", "dur": "3–4小时"}, "20": {"intro": "文艺休闲街区，餐厅、精品店与轻轨相连，节奏悠闲。", "trans": "自驾或乘G:link轻轨。", "dur": "1–2小时"}, "21": {"intro": "主题乐园（可选），海豚海狮表演、游乐设施与水上项目。", "trans": "自驾约25分钟。", "dur": "全天或4–6小时"}, "22": {"intro": "凯恩斯市区海滨的免费公共泻湖泳池与步道，适合泡水解暑。", "trans": "酒店步行可达。", "dur": "1–2小时"}, "23": {"intro": "全天出海到外礁浮动平台浮潜，看珊瑚与热带鱼群，本次行程心愿点。", "trans": "凯恩斯码头参加出海一日游（含船程与装备）。", "dur": "全天（约8–9小时）"}, "24": {"intro": "从艾尔利滩出海的日落帆船巡游，含饮品，海上看晚霞。", "trans": "艾尔利滩码头登船。", "dur": "2–3小时"}, "25": {"intro": "含98%纯白硅砂的白天堂沙滩，沙洲随潮汐变幻，视频里的经典画面。", "trans": "从艾尔利滩乘快艇/游船一日游前往。", "dur": "全天或半日游"}, "26": {"intro": "俯瞰希尔湾沙洲漩涡状潮汐奇观的最佳观景台。", "trans": "与白天堂沙滩同一船程，下船后步行登山步道约15分钟。", "dur": "含在白天堂一日游内"}, "27": {"intro": "悉尼市中心的绿地公园，有喷泉、林荫道与战争纪念碑。", "trans": "步行，或火车至St James站。", "dur": "约0.5小时"}, "28": {"intro": "哥特复兴式砂岩大教堂，彩窗精美，免费入内参观。", "trans": "步行，海德公园旁。", "dur": "0.5–1小时"}, "29": {"intro": "悉尼渡轮枢纽，可同时远眺歌剧院与海港大桥。", "trans": "步行，或火车至Circular Quay站。", "dur": "0.5–1小时"}, "30": {"intro": "帆船造型的世界文化遗产，可入内参加中文导览，本次行程心愿点。", "trans": "步行，环形码头旁。", "dur": "1–1.5小时（含导览）"}, "31": {"intro": "悉尼海港大桥，可登桥塔瞭望台或参加攀桥，俯瞰全港。", "trans": "步行，环形码头/岩石区一侧。", "dur": "1–2小时（登桥）"}, "32": {"intro": "5–11月座头鲸迁徙季出海观鲸，运气好可近距离看到鲸鱼。", "trans": "环形码头或达令港登船。", "dur": "3–4小时"}, "33": {"intro": "海港边的皇家植物园，绿地、雕塑与海港景观，适合野餐散步。", "trans": "步行，歌剧院旁。", "dur": "约1小时"}, "34": {"intro": "拍摄歌剧院与海港大桥同框的经典机位，位于植物园内海角。", "trans": "步行，皇家植物园内。", "dur": "约0.5小时"}, "35": {"intro": "世界最陡的景观铁路、空中缆车与雨林步道，蓝山一日精华。", "trans": "火车至Katoomba约2小时，或从悉尼参加一日游。", "dur": "景区内3–4小时（含往返全天）"}, "36": {"intro": "蓝山三座并列的砂岩奇峰，回声角观景台是最佳拍摄点。", "trans": "与Scenic World同景区，蓝山一日行程内。", "dur": "0.5–1小时"}, "37": {"intro": "悉尼最古老的历史街区，鹅卵石巷弄、酒吧与周末市集。", "trans": "步行，环形码头旁。", "dur": "1–2小时"}, "38": {"intro": "免费入场的当代艺术馆，顶楼咖啡馆可俯瞰海港。", "trans": "步行，环形码头旁。", "dur": "1–2小时"}, "39": {"intro": "港湾旁的动物园，乘缆车上山看考拉，背景就是歌剧院与海港。", "trans": "环形码头乘渡轮约12分钟直达。", "dur": "3–4小时（含渡轮）"}, "40": {"intro": "滨水娱乐区，餐厅、海事博物馆与夜景，周末偶有烟花。", "trans": "步行或乘轻轨前往。", "dur": "1–2小时（傍晚）"}}};
+const CC = DATA.city_color;
+const map = L.map('map',{zoomControl:true,preferCanvas:false}).setView([-27.5,146],5);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  {maxZoom:18, attribution:'底图 © Esri World Street Map'}).addTo(map);
+
+const layers = {};
+const markers = {};
+Object.keys(CC).forEach(c=>{ layers[c]=L.layerGroup().addTo(map); });
+const hotelLayer = L.layerGroup().addTo(map);
+const airportLayer = L.layerGroup().addTo(map);
+const flightLayer = L.layerGroup().addTo(map);
+
+// flights (airport-to-airport dashed lines + label)
+DATA.flights.forEach(f=>{
+  const [a,b]=f; const col='#0f2c4c';
+  flightLayer.addLayer(L.polyline([a,b],{color:col,weight:2,dashArray:'6,7',opacity:.75}));
+  const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  flightLayer.addLayer(L.marker(mid,{icon:L.divIcon({className:'',html:`<div class="plabel">✈ ${f[2]} ${f[3]}</div>`,iconSize:[130,18],iconAnchor:[65,9]}),interactive:false}));
+});
+
+// attractions
+DATA.attractions.forEach(p=>{
+  const [num,day,city,cn,en,lat,lng,note]=p; const col=CC[city];
+  const dt=DATA.details[num]||{};
+  const ic=L.divIcon({className:'',html:`<div class="pin" style="background:${col};width:24px;height:24px;">${num}</div>`,iconSize:[24,24],iconAnchor:[12,12]});
+  const m=L.marker([lat,lng],{icon:ic});
+  const rows=(dt.intro||dt.trans||dt.dur)?`<div class="rows">`+
+      (dt.intro?`<div class="row"><span class="k i">介绍</span><span class="v">${dt.intro}</span></div>`:'')+
+      (dt.trans?`<div class="row"><span class="k t">交通</span><span class="v">${dt.trans}</span></div>`:'')+
+      (dt.dur?`<div class="row"><span class="k du">时长</span><span class="v">${dt.dur}</span></div>`:'')+
+    `</div>`:`<div class="n">${note||''}</div>`;
+  m.bindPopup(`<div class="pop"><span class="d">${day} · ${city}</span><br><b>${num}. ${cn}</b><div class="e">${en}</div>${rows}</div>`,{maxWidth:300,autoPan:true,autoPanPadding:[20,20]});
+  layers[city].addLayer(m); markers[num]=m;
+});
+
+// hotels
+DATA.hotels.forEach(h=>{
+  const [hid,city,name,nights,date,lat,lng]=h; const col=CC[city];
+  const ic=L.divIcon({className:'',html:`<div class="hpin" style="border-color:${col};width:26px;height:22px;">宿</div>`,iconSize:[26,22],iconAnchor:[13,11]});
+  const m=L.marker([lat,lng],{icon:ic});
+  m.bindPopup(`<div class="pop"><span class="d">${hid} · ${city} 住宿</span><br><b>${name}</b><div class="n">${nights} ｜ ${date}</div></div>`);
+  hotelLayer.addLayer(m);
+});
+
+// airports
+DATA.airports.forEach(ap=>{
+  const [code,name,lat,lng,note]=ap;
+  const ic=L.divIcon({className:'',html:`<div class="apin" style="height:20px;">✈ ${code}</div>`,iconSize:[58,20],iconAnchor:[29,10]});
+  const m=L.marker([lat,lng],{icon:ic});
+  m.bindPopup(`<div class="pop"><span class="d">机场 · ${code}</span><br><b>${name}</b><div class="n">${note||''}</div></div>`);
+  airportLayer.addLayer(m);
+});
+
+map.fitBounds(L.latLngBounds(DATA.attractions.map(p=>[p[5],p[6]]).concat(DATA.hotels.map(h=>[h[5],h[6]]).concat(DATA.airports.map(a=>[a[2],a[3]])))).pad(0.12));
+
+// controls
+const ctrl=document.getElementById('ctrl');
+function chip(label,color,onclick){
+  const d=document.createElement('div'); d.className='chip';
+  d.innerHTML=`<span class="dot" style="background:${color}"></span>${label}`;
+  let on=true; d.onclick=()=>{on=!on;d.classList.toggle('off',!on);onclick(on);}; ctrl.appendChild(d);
+}
+Object.keys(CC).forEach(c=>chip(c+'('+DATA.attractions.filter(a=>a[2]===c).length+')',CC[c],on=>{on?map.addLayer(layers[c]):map.removeLayer(layers[c]);}));
+chip('住宿','#111827',on=>{on?map.addLayer(hotelLayer):map.removeLayer(hotelLayer);});
+chip('机场','#145da0',on=>{on?map.addLayer(airportLayer):map.removeLayer(airportLayer);});
+chip('航线','#0f2c4c',on=>{on?map.addLayer(flightLayer):map.removeLayer(flightLayer);});
+
+// legend
+const leg=document.getElementById('legend');
+function jumpTo(lat,lng,num){ return ()=>{ map.flyTo([lat,lng],Math.max(map.getZoom(),12),{duration:.8}); if(num&&markers[num])setTimeout(()=>markers[num].openPopup(),850);} }
+const order=["墨尔本","黄金海岸","凯恩斯","圣灵群岛","悉尼"];
+order.forEach(city=>{
+  const items=DATA.attractions.filter(a=>a[2]===city);
+  const g=document.createElement('div'); g.className='grp'; g.style.background=CC[city];
+  g.innerHTML=`<span>${city}</span><small>${items.length}个景点</small>`; leg.appendChild(g);
+  items.forEach(a=>{
+    const [num,day,c,cn,en,lat,lng]=a;
+    const it=document.createElement('div'); it.className='item';
+    it.innerHTML=`<div class="num" style="background:${CC[c]}">${num}</div><div><div class="nm">${cn} <span style="color:#9aa">${day}</span></div><div class="en">${en}</div></div>`;
+    it.onclick=jumpTo(lat,lng,num); leg.appendChild(it);
+  });
+  DATA.hotels.filter(h=>h[1]===city).forEach(h=>{
+    const it=document.createElement('div'); it.className='hotel';
+    it.innerHTML=`<div class="hbadge">宿</div><div><div class="nm">${h[2]}</div><div class="en">${h[3]} ｜ ${h[4]}</div></div>`;
+    it.onclick=jumpTo(h[5],h[6],null); leg.appendChild(it);
+  });
+  DATA.airports.filter(a=>a[1].indexOf(city)===0 || (city==='圣灵群岛'&&a[0]==='PPP')).forEach(ap=>{
+    const it=document.createElement('div'); it.className='aport';
+    it.innerHTML=`<div class="apin" style="height:20px;flex:0 0 auto;">✈ ${ap[0]}</div><div><div class="nm">${ap[1]}</div><div class="en">${ap[4]}</div></div>`;
+    it.onclick=jumpTo(ap[2],ap[3],null); leg.appendChild(it);
+  });
+});
+const fs=document.createElement('div'); fs.className='sect'; fs.textContent='内陆航班(4段)'; leg.appendChild(fs);
+DATA.flights.forEach(f=>{const d=document.createElement('div');d.className='fl';d.innerHTML=`<b>${f[4]}</b><br>${f[2]} · ${f[3]}`;leg.appendChild(d);});
+</script>
+</body></html>
